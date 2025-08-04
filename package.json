@@ -1,0 +1,22 @@
+{
+  "name": "multi-app-manager",
+  "version": "0.46.0",
+  "description": "Multi-App Manager with Smart Template v2.0 Integration",
+  "main": "simple-server.js",
+  "scripts": {
+    "start": "node simple-server.js",
+    "dev": "node simple-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "keywords": [
+    "firebase",
+    "authentication",
+    "multi-app",
+    "management"
+  ],
+  "author": "Multi-App Manager Team",
+  "license": "MIT"
+}

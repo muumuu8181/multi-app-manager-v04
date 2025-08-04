@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>拡張マルチアプリ管理ツール</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .app-title {
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .version-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 1000;
+        }
+
+        .settings-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .settings-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .settings-panel {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 10px;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .settings-panel.active {
+            display: block;
+        }
+
+        .app-checkbox {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+        }
+
+        .app-checkbox input[type="checkbox"] {
+            margin-right: 8px;
+            transform: scale(1.2);
+        }
+
+        .tab-list {
+            flex: 1;
+            padding: 10px 0;
+            overflow-y: auto;
+        }
+
+        .tab-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            margin: 3px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 14px;
+            border: 1px solid transparent;
+            width: calc(100% - 20px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tab-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .tab-button.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateX(10px);
+        }
+
+        .tab-button .icon {
+            font-size: 16px;
+            margin-right: 8px;
+        }
+
+        .content-area {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            margin: 20px;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .app-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+            min-height: calc(100vh - 80px);
+        }
+
+        .app-content.active {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #666;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .calculator {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .calculator h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .calc-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-bottom: 15px;
+        }
+
+        .calc-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            border: 2px solid #e1e5e9;
+        }
+
+        .welcome {
+            text-align: center;
+            color: #333;
+            padding: 20px;
+        }
+
+        .welcome h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .welcome p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            z-index: 1000;
+        }
+
+        /* モバイル対応 */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 40vh;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .sidebar-header {
+                padding: 15px;
+            }
+
+            .app-title {
+                font-size: 18px;
+                margin-bottom: 10px;
+            }
+
+            .tab-list {
+                display: flex;
+                overflow-x: auto;
+                overflow-y: visible;
+                padding: 10px;
+                white-space: nowrap;
+            }
+
+            .tab-button {
+                min-width: 120px;
+                margin: 0 5px;
+                flex-shrink: 0;
+            }
+
+            .content-area {
+                margin: 10px;
+                border-radius: 15px;
+                padding: 15px;
+                flex: 1;
+                min-height: auto;
+            }
+
+            .calculator {
+                padding: 20px;
+            }
+
+            .app-content {
+                min-height: auto;
+            }
+
+            .status-bar {
+                position: relative;
+                bottom: auto;
+                right: auto;
+                margin-top: 10px;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar-header {
+                padding: 10px;
+            }
+
+            .app-title {
+                font-size: 16px;
+            }
+
+            .calculator {
+                padding: 15px;
+            }
+
+            .calculator h2 {
+                font-size: 18px;
+            }
+
+            .input-group input {
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .calc-button {
+                padding: 12px;
+                font-size: 16px;
+            }
+
+            .result {
+                font-size: 20px;
+                padding: 12px;
+            }
+        }
+
+        /* ダークモード対応 */
+        @media (prefers-color-scheme: dark) {
+            .content-area {
+                background: rgba(30, 30, 30, 0.95);
+            }
+
+            .calculator {
+                background: #2a2a2a;
+                color: white;
+            }
+
+            .calculator h2 {
+                color: white;
+            }
+
+            .input-group label {
+                color: #ccc;
+            }
+
+            .input-group input {
+                background: #3a3a3a;
+                border-color: #555;
+                color: white;
+            }
+
+            .result {
+                background: #3a3a3a;
+                color: white;
+                border-color: #555;
+            }
+
+            .welcome {
+                color: white;
+            }
+
+            .welcome h1 {
+                color: #8aa7f7;
+            }
+
+            .welcome p {
+                color: #ccc;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="version-badge">v0.41</div>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="app-title">📱 拡張マルチアプリ</div>
+            <button class="settings-toggle" onclick="toggleSettings()">
+                ⚙️ アプリ設定
+            </button>
+            <div class="settings-panel" id="settingsPanel">
+                <div id="appCheckboxes"></div>
+                <button onclick="resetSettings()" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 11px; margin-top: 10px; cursor: pointer;">
+                    リセット
+                </button>
+            </div>
+        </div>
+        
+        <div class="tab-list" id="tabList">
+            <!-- タブボタンは動的に生成 -->
+        </div>
+    </div>
+
+    <div class="content-area" id="contentArea">
+        <!-- アプリコンテンツは動的に読み込み -->
+    </div>
+
+    <div class="status-bar" id="statusBar">
+        読み込み中...
+    </div>
+
+    <script>
+        // アプリ設定とコンテンツの管理クラス
+        class AppManager {
+            constructor() {
+                this.apps = new Map();
+                this.activeApp = null;
+                this.settings = this.loadSettings();
+                this.tabsConfig = null;
+                this.init();
+            }
+
+            // 初期化
+            async init() {
+                await this.loadTabsConfig();
+                this.registerDefaultApps();
+                this.registerTabsFromConfig();
+                this.generateDemoApps();
+                this.renderTabs();
+                this.renderSettings();
+                this.showApp('welcome');
+                this.updateStatus(`${this.apps.size}個のアプリが利用可能`);
+            }
+
+            // 外部タブ設定の読み込み（フォールバック対応）
+            async loadTabsConfig() {
+                try {
+                    const response = await fetch('tabs-config.json');
+                    this.tabsConfig = await response.json();
+                    console.log('タブ設定を読み込みました:', this.tabsConfig);
+                } catch (error) {
+                    console.warn('タブ設定の読み込みに失敗、デフォルト設定を使用:', error);
+                    // フォールバック: デフォルト設定を直接定義
+                    this.tabsConfig = {
+                        "tabs": [
+                            {
+                                "id": "tab1",
+                                "name": "時間管理",
+                                "icon": "⏰",
+                                "category": "productivity",
+                                "type": "content",
+                                "description": "時間の管理と効率化ツール"
+                            },
+                            {
+                                "id": "tab2", 
+                                "name": "体型管理",
+                                "icon": "🏃‍♀️",
+                                "category": "health",
+                                "type": "content",
+                                "description": "体型維持と健康管理システム"
+                            },
+                            {
+                                "id": "tab3",
+                                "name": "仕事管理", 
+                                "icon": "💼",
+                                "category": "work",
+                                "type": "content",
+                                "description": "業務とプロジェクトの管理"
+                            },
+                            {
+                                "id": "tab4",
+                                "name": "女性管理",
+                                "icon": "👩",
+                                "category": "lifestyle",
+                                "type": "content", 
+                                "description": "女性向けライフスタイル管理"
+                            },
+                            {
+                                "id": "tab5",
+                                "name": "計算グループ",
+                                "icon": "🧮",
+                                "category": "tools",
+                                "type": "calculator-tabs",
+                                "description": "各種計算機能（内部タブ）"
+                            },
+                            {
+                                "id": "tab6",
+                                "name": "部屋片付け",
+                                "icon": "🧹",
+                                "category": "lifestyle",
+                                "type": "content",
+                                "description": "部屋の整理整頓と清掃管理"
+                            },
+                            {
+                                "id": "tab7",
+                                "name": "タブ7",
+                                "icon": "7️⃣", 
+                                "category": "tab",
+                                "type": "content",
+                                "description": "カスタマイズ可能なタブ7"
+                            },
+                            {
+                                "id": "tab8",
+                                "name": "タブ8",
+                                "icon": "8️⃣",
+                                "category": "tab", 
+                                "type": "content",
+                                "description": "カスタマイズ可能なタブ8"
+                            },
+                            {
+                                "id": "tab9",
+                                "name": "タブ9",
+                                "icon": "9️⃣",
+                                "category": "tab",
+                                "type": "content", 
+                                "description": "カスタマイズ可能なタブ9"
+                            },
+                            {
+                                "id": "tab10",
+                                "name": "タブ10",
+                                "icon": "🔟",
+                                "category": "tab",
+                                "type": "content",
+                                "description": "カスタマイズ可能なタブ10"
+                            }
+                        ]
+                    };
+                }
+            }
+
+            // デフォルトアプリの登録
+            registerDefaultApps() {
+                this.registerApp({
+                    id: 'welcome',
+                    name: 'ホーム',
+                    icon: '🏠',
+                    category: 'system',
+                    content: this.getWelcomeContent()
+                });
+
+                // 個別計算機能は削除 - 計算グループ（内部タブ）に統合済み
+
+            }
+
+            // 外部設定からタブを登録
+            registerTabsFromConfig() {
+                if (!this.tabsConfig || !this.tabsConfig.tabs) return;
+
+                this.tabsConfig.tabs.forEach(tabConfig => {
+                    let appData = {
+                        id: tabConfig.id,
+                        name: tabConfig.name,
+                        icon: tabConfig.icon,
+                        category: tabConfig.category
+                    };
+
+                    switch(tabConfig.type) {
+                        case 'calculator-tabs':
+                            appData.content = this.getCalculatorTabsContent();
+                            break;
+                        case 'content':
+                            appData.content = this.getTabContent(tabConfig.id, tabConfig.name, tabConfig.description);
+                            break;
+                        case 'url':
+                            appData.url = tabConfig.url;
+                            break;
+                        default:
+                            appData.content = this.getTabContent(tabConfig.id, tabConfig.name, tabConfig.description);
+                    }
+
+                    this.registerApp(appData);
+                });
+            }
+
+            // デモアプリの生成（100個対応のテスト）
+            generateDemoApps() {
+                const categories = ['ツール', 'ゲーム', 'ユーティリティ', '計算', 'エンターテイメント'];
+                const icons = ['🔧', '🎮', '📊', '🧮', '🎬', '📝', '🎨', '📱', '💼', '🌟'];
+                
+                for (let i = 5; i <= 50; i++) {
+                    const category = categories[i % categories.length];
+                    const icon = icons[i % icons.length];
+                    
+                    this.registerApp({
+                        id: `demo_${i}`,
+                        name: `${category}アプリ${i}`,
+                        icon: icon,
+                        category: category.toLowerCase(),
+                        content: this.getDemoAppContent(i, category, icon),
+                        enabled: false // デフォルトで無効
+                    });
+                }
+            }
+
+            // アプリ登録
+            registerApp(appConfig) {
+                const defaultConfig = {
+                    enabled: true,
+                    loadOnDemand: true
+                };
+                this.apps.set(appConfig.id, { ...defaultConfig, ...appConfig });
+            }
+
+            // 設定の読み込み
+            loadSettings() {
+                try {
+                    const saved = localStorage.getItem('multiAppSettings');
+                    return saved ? JSON.parse(saved) : {};
+                } catch (e) {
+                    console.warn('設定の読み込みに失敗:', e);
+                    return {};
+                }
+            }
+
+            // 設定の保存
+            saveSettings() {
+                try {
+                    localStorage.setItem('multiAppSettings', JSON.stringify(this.settings));
+                } catch (e) {
+                    console.warn('設定の保存に失敗:', e);
+                }
+            }
+
+            // タブの描画
+            renderTabs() {
+                const tabList = document.getElementById('tabList');
+                tabList.innerHTML = '';
+
+                for (const [id, app] of this.apps) {
+                    const isEnabled = this.settings[id] !== false && app.enabled !== false;
+                    
+                    if (isEnabled) {
+                        const button = document.createElement('button');
+                        button.className = 'tab-button';
+                        button.innerHTML = `
+                            <span>
+                                <span class="icon">${app.icon}</span>
+                                ${app.name}
+                            </span>
+                        `;
+                        button.onclick = () => this.showApp(id);
+                        tabList.appendChild(button);
+                    }
+                }
+            }
+
+            // 設定パネルの描画
+            renderSettings() {
+                const container = document.getElementById('appCheckboxes');
+                container.innerHTML = '';
+
+                for (const [id, app] of this.apps) {
+                    if (app.category !== 'system') {
+                        const div = document.createElement('div');
+                        div.className = 'app-checkbox';
+                        
+                        const isChecked = this.settings[id] !== false && app.enabled !== false;
+                        
+                        div.innerHTML = `
+                            <input type="checkbox" id="check_${id}" ${isChecked ? 'checked' : ''} 
+                                   onchange="appManager.toggleApp('${id}', this.checked)">
+                            <label for="check_${id}">${app.icon} ${app.name}</label>
+                        `;
+                        container.appendChild(div);
+                    }
+                }
+            }
+
+            // アプリの有効/無効切り替え
+            toggleApp(id, enabled) {
+                this.settings[id] = enabled;
+                this.saveSettings();
+                this.renderTabs();
+                
+                if (!enabled && this.activeApp === id) {
+                    this.showApp('welcome');
+                }
+            }
+
+            // アプリの表示
+            async showApp(id) {
+                const app = this.apps.get(id);
+                if (!app) return;
+
+                // URLが設定されている場合は直接移動
+                if (app.url) {
+                    window.location.href = app.url;
+                    return;
+                }
+
+                this.activeApp = id;
+                this.updateActiveTab(id);
+                
+                const contentArea = document.getElementById('contentArea');
+                
+                // ローディング表示
+                contentArea.innerHTML = '<div class="loading">アプリを読み込み中</div>';
+                
+                // 遅延読み込みのシミュレーション
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                // コンテンツの表示
+                contentArea.innerHTML = app.content;
+                
+                this.updateStatus(`${app.name} を表示中`);
+            }
+
+            // アクティブタブの更新
+            updateActiveTab(activeId) {
+                const buttons = document.querySelectorAll('.tab-button');
+                buttons.forEach((button, index) => {
+                    const apps = Array.from(this.apps.values()).filter(app => 
+                        (this.settings[app.id] !== false && app.enabled !== false) ||
+                        (app.category === 'system')
+                    );
+                    
+                    if (apps[index] && apps[index].id === activeId) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                });
+            }
+
+            // ステータス更新
+            updateStatus(message) {
+                document.getElementById('statusBar').textContent = message;
+            }
+
+            // ウェルカムコンテンツ
+            getWelcomeContent() {
+                return `
+                    <div class="welcome">
+                        <h1>🎉 拡張マルチアプリ管理ツール</h1>
+                        <p>左側のタブから利用したいアプリを選択してください。</p>
+                        <p>⚙️ <strong>設定ボタン</strong>でアプリの表示/非表示を切り替えできます。</p>
+                        <p>📱 <strong>モバイル対応</strong>: スマートフォン・タブレットでも快適に使用可能</p>
+                        <p>⚡ <strong>高性能設計</strong>: 必要時のみアプリを読み込み、メモリ効率を最適化</p>
+                        <p>🔧 <strong>カスタマイズ可能</strong>: 最大100個のアプリまで対応</p>
+                        <p>💾 <strong>設定保存</strong>: ブラウザにアプリ設定を自動保存</p>
+                        <br>
+                        <p>現在利用可能なアプリ: <strong>${this.apps.size}個</strong></p>
+                        <p>表示中のアプリ: <strong>${Array.from(this.apps.values()).filter(app => 
+                            (this.settings[app.id] !== false && app.enabled !== false) ||
+                            app.category === 'system'
+                        ).length}個</strong></p>
+                    </div>
+                `;
+            }
+
+            // 計算機コンテンツ
+            getCalculatorContent(operation, title, symbol) {
+                return `
+                    <div class="calculator">
+                        <h2>${symbol} ${title}計算機</h2>
+                        <div class="input-group">
+                            <label>数値1:</label>
+                            <input type="number" id="${operation}1" placeholder="最初の数値を入力">
+                        </div>
+                        <div class="input-group">
+                            <label>数値2:</label>
+                            <input type="number" id="${operation}2" placeholder="2番目の数値を入力">
+                        </div>
+                        <button class="calc-button" onclick="calculate('${operation}')">計算する</button>
+                        <div class="result" id="${operation}-result">結果がここに表示されます</div>
+                    </div>
+                `;
+            }
+
+            // デモアプリコンテンツ
+            getDemoAppContent(num, category, icon) {
+                return `
+                    <div class="welcome">
+                        <h1>${icon} ${category}アプリ${num}</h1>
+                        <p>これは<strong>${category}</strong>カテゴリのデモアプリです。</p>
+                        <p>アプリID: demo_${num}</p>
+                        <p>カテゴリ: ${category}</p>
+                        <p>このエリアに実際のアプリ機能を実装できます。</p>
+                        <br>
+                        <div style="background: #f0f8ff; padding: 20px; border-radius: 10px; border: 2px dashed #667eea;">
+                            <h3>💡 カスタマイズヒント</h3>
+                            <p>• HTMLを直接編集してアプリ機能を追加</p>
+                            <p>• JavaScript関数でインタラクティブ機能を実装</p>
+                            <p>• CSSでスタイリングをカスタマイズ</p>
+                            <p>• LocalStorageでデータを永続化</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // グループコンテンツ
+            getGroupContent(groupId) {
+                if (groupId === 'group1') {
+                    return `
+                        <div class="welcome">
+                            <h1>📊 基本計算グループ</h1>
+                            <p>四則演算の基本的な計算アプリケーション</p>
+                            <br>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                                <div style="background: #f0f8ff; padding: 20px; border-radius: 10px; text-align: center; cursor: pointer;" onclick="window.open('groups/group1/add.html', '_blank')">
+                                    <div style="font-size: 24px; margin-bottom: 10px;">➕</div>
+                                    <h3>足し算計算機</h3>
+                                    <p>基本的な加算演算</p>
+                                </div>
+                                <div style="background: #f0f8ff; padding: 20px; border-radius: 10px; text-align: center; cursor: pointer;" onclick="window.open('groups/group1/subtract.html', '_blank')">
+                                    <div style="font-size: 24px; margin-bottom: 10px;">➖</div>
+                                    <h3>引き算計算機</h3>
+                                    <p>基本的な減算演算</p>
+                                </div>
+                                <div style="background: #f0f8ff; padding: 20px; border-radius: 10px; text-align: center; cursor: pointer;" onclick="window.open('groups/group1/multiply.html', '_blank')">
+                                    <div style="font-size: 24px; margin-bottom: 10px;">✖️</div>
+                                    <h3>掛け算計算機</h3>
+                                    <p>基本的な乗算演算</p>
+                                </div>
+                                <div style="background: #f0f8ff; padding: 20px; border-radius: 10px; text-align: center; cursor: pointer;" onclick="window.open('groups/group1/divide.html', '_blank')">
+                                    <div style="font-size: 24px; margin-bottom: 10px;">➗</div>
+                                    <h3>割り算計算機</h3>
+                                    <p>基本的な除算演算</p>
+                                </div>
+                            </div>
+                            <div style="text-align: center; margin-top: 20px;">
+                                <button onclick="window.open('groups/group1/index.html', '_blank')" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                                    📊 グループページを開く
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else if (groupId === 'group2') {
+                    return `
+                        <div class="welcome">
+                            <h1>⚡ 応用計算グループ</h1>
+                            <p>高度な数学計算機能を提供します</p>
+                            <br>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                                <div style="background: #f0f8ff; padding: 20px; border-radius: 10px; text-align: center; opacity: 0.6;">
+                                    <div style="font-size: 24px; margin-bottom: 10px;">📈</div>
+                                    <h3>累乗計算機</h3>
+                                    <p>Coming Soon</p>
+                                </div>
+                                <div style="background: #f0f8ff; padding: 20px; border-radius: 10px; text-align: center; opacity: 0.6;">
+                                    <div style="font-size: 24px; margin-bottom: 10px;">√</div>
+                                    <h3>平方根計算機</h3>
+                                    <p>Coming Soon</p>
+                                </div>
+                                <div style="background: #f0f8ff; padding: 20px; border-radius: 10px; text-align: center; opacity: 0.6;">
+                                    <div style="font-size: 24px; margin-bottom: 10px;">％</div>
+                                    <h3>パーセント計算機</h3>
+                                    <p>Coming Soon</p>
+                                </div>
+                                <div style="background: #f0f8ff; padding: 20px; border-radius: 10px; text-align: center; opacity: 0.6;">
+                                    <div style="font-size: 24px; margin-bottom: 10px;">📐</div>
+                                    <h3>三角関数計算機</h3>
+                                    <p>Coming Soon</p>
+                                </div>
+                            </div>
+                            <div style="text-align: center; margin-top: 20px;">
+                                <button onclick="window.open('groups/group2/index.html', '_blank')" style="background: #4facfe; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                                    ⚡ グループページを開く
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                return '<div class="welcome"><h1>グループが見つかりません</h1></div>';
+            }
+
+            // 計算グループコンテンツ
+            getCalculationGroupContent() {
+                return `
+                    <div class="welcome">
+                        <h1>🧮 計算グループ</h1>
+                        <p>四則演算の計算ツールを選択してください</p>
+                        <br>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0;">
+                            <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; text-align: center; cursor: pointer; border: 2px solid #2196f3;" 
+                                 onclick="appManager.showCalculator('add')">
+                                <div style="font-size: 32px; margin-bottom: 10px;">➕</div>
+                                <h3>足し算</h3>
+                                <p>数値を足し合わせます</p>
+                            </div>
+                            <div style="background: #fce4ec; padding: 20px; border-radius: 10px; text-align: center; cursor: pointer; border: 2px solid #e91e63;" 
+                                 onclick="appManager.showCalculator('sub')">
+                                <div style="font-size: 32px; margin-bottom: 10px;">➖</div>
+                                <h3>引き算</h3>
+                                <p>数値を引き算します</p>
+                            </div>
+                            <div style="background: #e8f5e8; padding: 20px; border-radius: 10px; text-align: center; cursor: pointer; border: 2px solid #4caf50;" 
+                                 onclick="appManager.showCalculator('mul')">
+                                <div style="font-size: 32px; margin-bottom: 10px;">✖️</div>
+                                <h3>掛け算</h3>
+                                <p>数値を掛け合わせます</p>
+                            </div>
+                            <div style="background: #fff3e0; padding: 20px; border-radius: 10px; text-align: center; cursor: pointer; border: 2px solid #ff9800;" 
+                                 onclick="appManager.showCalculator('div')">
+                                <div style="font-size: 32px; margin-bottom: 10px;">➗</div>
+                                <h3>割り算</h3>
+                                <p>数値を割り算します</p>
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-top: 20px;">
+                            <button onclick="appManager.showApp('welcome')" 
+                                    style="background: #666; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                                🏠 ホームに戻る
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 計算機表示メソッド
+            showCalculator(operation) {
+                const contentArea = document.getElementById('contentArea');
+                contentArea.innerHTML = this.getCalculatorContent(operation, 
+                    operation === 'add' ? '足し算' : 
+                    operation === 'sub' ? '引き算' : 
+                    operation === 'mul' ? '掛け算' : '割り算',
+                    operation === 'add' ? '➕' : 
+                    operation === 'sub' ? '➖' : 
+                    operation === 'mul' ? '✖️' : '➗'
+                );
+                this.updateStatus(`${operation === 'add' ? '足し算' : operation === 'sub' ? '引き算' : operation === 'mul' ? '掛け算' : '割り算'}計算機を表示中`);
+            }
+
+            // 計算タブコンテンツ（内部タブ付き - 左メニュー残存版）
+            getCalculatorTabsContent() {
+                return `
+                    <style>
+                        .calc-container {
+                            height: 100%;
+                            display: flex;
+                            flex-direction: column;
+                        }
+                        
+                        .calc-header {
+                            text-align: center;
+                            margin-bottom: 20px;
+                        }
+                        
+                        .calc-header h1 {
+                            color: #333;
+                            font-size: 28px;
+                            margin-bottom: 10px;
+                        }
+                        
+                        .calc-header p {
+                            color: #666;
+                            font-size: 16px;
+                        }
+                        
+                        .calc-tab-nav {
+                            display: grid;
+                            grid-template-columns: repeat(5, 1fr);
+                            gap: 8px;
+                            background: rgba(102, 126, 234, 0.1);
+                            border-radius: 15px;
+                            padding: 10px;
+                            margin-bottom: 25px;
+                            max-width: 100%;
+                        }
+                        
+                        .calc-tab-button {
+                            background: transparent;
+                            color: rgba(102, 126, 234, 0.7);
+                            border: none;
+                            padding: 12px 16px;
+                            border-radius: 10px;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                            font-size: 14px;
+                            font-weight: 500;
+                            white-space: nowrap;
+                            text-align: center;
+                            min-height: 44px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
+                        
+                        .calc-tab-button:hover {
+                            background: rgba(102, 126, 234, 0.1);
+                            color: #667eea;
+                        }
+                        
+                        .calc-tab-button.active {
+                            background: rgba(102, 126, 234, 0.2);
+                            color: #667eea;
+                            transform: translateY(-2px);
+                            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.2);
+                        }
+                        
+                        .calc-tab-content {
+                            display: none;
+                            flex: 1;
+                            animation: fadeInCalc 0.3s ease;
+                        }
+                        
+                        .calc-tab-content.active {
+                            display: block;
+                        }
+                        
+                        .calc-calculator {
+                            max-width: 400px;
+                            margin: 0 auto;
+                            background: white;
+                            padding: 25px;
+                            border-radius: 15px;
+                            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+                        }
+                        
+                        .calc-calculator h2 {
+                            color: #333;
+                            margin-bottom: 20px;
+                            text-align: center;
+                            font-size: 22px;
+                        }
+                        
+                        .calc-input-group {
+                            margin-bottom: 15px;
+                        }
+                        
+                        .calc-input-group label {
+                            display: block;
+                            margin-bottom: 5px;
+                            color: #555;
+                            font-weight: 500;
+                            font-size: 14px;
+                        }
+                        
+                        .calc-input-group input {
+                            width: 100%;
+                            padding: 12px;
+                            border: 2px solid #e1e5e9;
+                            border-radius: 8px;
+                            font-size: 16px;
+                            transition: border-color 0.3s ease;
+                        }
+                        
+                        .calc-input-group input:focus {
+                            outline: none;
+                            border-color: #667eea;
+                        }
+                        
+                        .calc-button {
+                            width: 100%;
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            border: none;
+                            padding: 14px;
+                            border-radius: 8px;
+                            font-size: 16px;
+                            font-weight: bold;
+                            cursor: pointer;
+                            transition: transform 0.2s ease;
+                            margin-bottom: 15px;
+                        }
+                        
+                        .calc-button:hover {
+                            transform: translateY(-2px);
+                        }
+                        
+                        .calc-result {
+                            background: #f8f9fa;
+                            padding: 15px;
+                            border-radius: 8px;
+                            text-align: center;
+                            font-size: 20px;
+                            font-weight: bold;
+                            color: #333;
+                            border: 2px solid #e1e5e9;
+                            min-height: 60px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
+                        
+                        @keyframes fadeInCalc {
+                            from { opacity: 0; transform: translateY(10px); }
+                            to { opacity: 1; transform: translateY(0); }
+                        }
+                        
+                        /* モバイル対応 */
+                        @media (max-width: 768px) {
+                            .calc-tab-nav {
+                                grid-template-columns: repeat(2, 1fr);
+                                gap: 6px;
+                                padding: 8px;
+                            }
+                            
+                            .calc-tab-button {
+                                padding: 10px 8px;
+                                font-size: 12px;
+                                min-height: 40px;
+                            }
+                            
+                            .calc-calculator {
+                                padding: 20px;
+                            }
+                            
+                            .calc-calculator h2 {
+                                font-size: 18px;
+                            }
+                        }
+                        
+                        @media (max-width: 480px) {
+                            .calc-tab-nav {
+                                grid-template-columns: 1fr 1fr;
+                            }
+                            
+                            .calc-tab-button {
+                                font-size: 11px;
+                                padding: 8px 6px;
+                            }
+                        }
+                    </style>
+                    
+                    <div class="calc-container">
+                        <div class="calc-header">
+                            <h1>🧮 計算グループ</h1>
+                            <p>計算方法を選択してください</p>
+                        </div>
+                        
+                        <!-- 内部タブナビゲーション（可変グリッド - 最大5列×2行対応） -->
+                        <div class="calc-tab-nav">
+                            <button class="calc-tab-button active" onclick="showCalcTab('add')">
+                                ➕ 足し算
+                            </button>
+                            <button class="calc-tab-button" onclick="showCalcTab('subtract')">
+                                ➖ 引き算
+                            </button>
+                            <button class="calc-tab-button" onclick="showCalcTab('multiply')">
+                                ✖️ 掛け算
+                            </button>
+                            <button class="calc-tab-button" onclick="showCalcTab('divide')">
+                                ➗ 割り算
+                            </button>
+                            <button class="calc-tab-button" onclick="showCalcTab('power')">
+                                📈 累乗
+                            </button>
+                            <button class="calc-tab-button" onclick="showCalcTab('sqrt')">
+                                √ 平方根
+                            </button>
+                            <button class="calc-tab-button" onclick="showCalcTab('percent')">
+                                ％ パーセント
+                            </button>
+                            <button class="calc-tab-button" onclick="showCalcTab('factorial')">
+                                ! 階乗
+                            </button>
+                            <button class="calc-tab-button" onclick="showCalcTab('modulo')">
+                                ＠ 余り
+                            </button>
+                            <button class="calc-tab-button" onclick="showCalcTab('round')">
+                                🔄 四捨五入
+                            </button>
+                        </div>
+                        
+                        <!-- 足し算タブ -->
+                        <div id="add-calc-content" class="calc-tab-content active">
+                            <div class="calc-calculator">
+                                <h2>➕ 足し算計算機</h2>
+                                <div class="calc-input-group">
+                                    <label>数値1:</label>
+                                    <input type="number" id="calc-add1" placeholder="最初の数値を入力" autofocus>
+                                </div>
+                                <div class="calc-input-group">
+                                    <label>数値2:</label>
+                                    <input type="number" id="calc-add2" placeholder="2番目の数値を入力">
+                                </div>
+                                <button class="calc-button" onclick="calculateCalc('add')">計算する</button>
+                                <div class="calc-result" id="calc-add-result">結果がここに表示されます</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 引き算タブ -->
+                        <div id="subtract-calc-content" class="calc-tab-content">
+                            <div class="calc-calculator">
+                                <h2>➖ 引き算計算機</h2>
+                                <div class="calc-input-group">
+                                    <label>数値1（被減数）:</label>
+                                    <input type="number" id="calc-subtract1" placeholder="引かれる数を入力">
+                                </div>
+                                <div class="calc-input-group">
+                                    <label>数値2（減数）:</label>
+                                    <input type="number" id="calc-subtract2" placeholder="引く数を入力">
+                                </div>
+                                <button class="calc-button" onclick="calculateCalc('subtract')">計算する</button>
+                                <div class="calc-result" id="calc-subtract-result">結果がここに表示されます</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 掛け算タブ -->
+                        <div id="multiply-calc-content" class="calc-tab-content">
+                            <div class="calc-calculator">
+                                <h2>✖️ 掛け算計算機</h2>
+                                <div class="calc-input-group">
+                                    <label>数値1（被乗数）:</label>
+                                    <input type="number" id="calc-multiply1" placeholder="掛けられる数を入力">
+                                </div>
+                                <div class="calc-input-group">
+                                    <label>数値2（乗数）:</label>
+                                    <input type="number" id="calc-multiply2" placeholder="掛ける数を入力">
+                                </div>
+                                <button class="calc-button" onclick="calculateCalc('multiply')">計算する</button>
+                                <div class="calc-result" id="calc-multiply-result">結果がここに表示されます</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 割り算タブ -->
+                        <div id="divide-calc-content" class="calc-tab-content">
+                            <div class="calc-calculator">
+                                <h2>➗ 割り算計算機</h2>
+                                <div class="calc-input-group">
+                                    <label>数値1（被除数）:</label>
+                                    <input type="number" id="calc-divide1" placeholder="割られる数を入力">
+                                </div>
+                                <div class="calc-input-group">
+                                    <label>数値2（除数）:</label>
+                                    <input type="number" id="calc-divide2" placeholder="割る数を入力（0以外）">
+                                </div>
+                                <button class="calc-button" onclick="calculateCalc('divide')">計算する</button>
+                                <div class="calc-result" id="calc-divide-result">結果がここに表示されます</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 累乗タブ -->
+                        <div id="power-calc-content" class="calc-tab-content">
+                            <div class="calc-calculator">
+                                <h2>📈 累乗計算機</h2>
+                                <div class="calc-input-group">
+                                    <label>底（数値）:</label>
+                                    <input type="number" id="calc-power1" placeholder="底となる数値を入力">
+                                </div>
+                                <div class="calc-input-group">
+                                    <label>指数（べき数）:</label>
+                                    <input type="number" id="calc-power2" placeholder="指数を入力">
+                                </div>
+                                <button class="calc-button" onclick="calculateCalc('power')">計算する</button>
+                                <div class="calc-result" id="calc-power-result">結果がここに表示されます</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 平方根タブ -->
+                        <div id="sqrt-calc-content" class="calc-tab-content">
+                            <div class="calc-calculator">
+                                <h2>√ 平方根計算機</h2>
+                                <div class="calc-input-group">
+                                    <label>数値:</label>
+                                    <input type="number" id="calc-sqrt1" placeholder="平方根を求める数値を入力">
+                                </div>
+                                <button class="calc-button" onclick="calculateCalc('sqrt')">計算する</button>
+                                <div class="calc-result" id="calc-sqrt-result">結果がここに表示されます</div>
+                            </div>
+                        </div>
+                        
+                        <!-- パーセントタブ -->
+                        <div id="percent-calc-content" class="calc-tab-content">
+                            <div class="calc-calculator">
+                                <h2>％ パーセント計算機</h2>
+                                <div class="calc-input-group">
+                                    <label>全体の値:</label>
+                                    <input type="number" id="calc-percent1" placeholder="全体の値を入力">
+                                </div>
+                                <div class="calc-input-group">
+                                    <label>部分の値:</label>
+                                    <input type="number" id="calc-percent2" placeholder="部分の値を入力">
+                                </div>
+                                <button class="calc-button" onclick="calculateCalc('percent')">パーセント計算</button>
+                                <div class="calc-result" id="calc-percent-result">結果がここに表示されます</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 階乗タブ -->
+                        <div id="factorial-calc-content" class="calc-tab-content">
+                            <div class="calc-calculator">
+                                <h2>! 階乗計算機</h2>
+                                <div class="calc-input-group">
+                                    <label>数値（整数）:</label>
+                                    <input type="number" id="calc-factorial1" placeholder="階乗を求める整数を入力" min="0" max="20">
+                                </div>
+                                <button class="calc-button" onclick="calculateCalc('factorial')">階乗計算</button>
+                                <div class="calc-result" id="calc-factorial-result">結果がここに表示されます</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 余りタブ -->
+                        <div id="modulo-calc-content" class="calc-tab-content">
+                            <div class="calc-calculator">
+                                <h2>＠ 余り計算機</h2>
+                                <div class="calc-input-group">
+                                    <label>割られる数:</label>
+                                    <input type="number" id="calc-modulo1" placeholder="割られる数を入力">
+                                </div>
+                                <div class="calc-input-group">
+                                    <label>割る数:</label>
+                                    <input type="number" id="calc-modulo2" placeholder="割る数を入力">
+                                </div>
+                                <button class="calc-button" onclick="calculateCalc('modulo')">余り計算</button>
+                                <div class="calc-result" id="calc-modulo-result">結果がここに表示されます</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 四捨五入タブ -->
+                        <div id="round-calc-content" class="calc-tab-content">
+                            <div class="calc-calculator">
+                                <h2>🔄 四捨五入計算機</h2>
+                                <div class="calc-input-group">
+                                    <label>数値:</label>
+                                    <input type="number" id="calc-round1" placeholder="四捨五入する数値を入力" step="any">
+                                </div>
+                                <div class="calc-input-group">
+                                    <label>小数点以下桁数:</label>
+                                    <input type="number" id="calc-round2" placeholder="桁数を入力（0=整数）" min="0" max="10" value="0">
+                                </div>
+                                <button class="calc-button" onclick="calculateCalc('round')">四捨五入</button>
+                                <div class="calc-result" id="calc-round-result">結果がここに表示されます</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 汎用タブコンテンツ（外部設定用）
+            getTabContent(tabId, tabName, description) {
+                const tabNumber = tabId.replace('tab', '');
+                return `
+                    <style>
+                        .todo-container {
+                            max-width: 800px;
+                            margin: 0 auto;
+                            padding: 20px;
+                        }
+                        
+                        .todo-header {
+                            text-align: center;
+                            margin-bottom: 30px;
+                        }
+                        
+                        .todo-textarea {
+                            width: 100%;
+                            min-height: 300px;
+                            padding: 15px;
+                            border: 2px solid #e1e5e9;
+                            border-radius: 10px;
+                            font-size: 14px;
+                            font-family: 'Courier New', monospace;
+                            resize: vertical;
+                            background: #fafbfc;
+                            transition: border-color 0.3s ease;
+                        }
+                        
+                        .todo-textarea:focus {
+                            outline: none;
+                            border-color: #667eea;
+                            background: white;
+                        }
+                        
+                        .todo-controls {
+                            margin-top: 15px;
+                            display: flex;
+                            gap: 10px;
+                            justify-content: center;
+                            flex-wrap: wrap;
+                        }
+                        
+                        .todo-btn {
+                            background: #667eea;
+                            color: white;
+                            border: none;
+                            padding: 8px 16px;
+                            border-radius: 5px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            transition: background 0.3s ease;
+                        }
+                        
+                        .todo-btn:hover {
+                            background: #5a67d8;
+                        }
+                        
+                        .todo-btn.secondary {
+                            background: #718096;
+                        }
+                        
+                        .todo-btn.secondary:hover {
+                            background: #4a5568;
+                        }
+                        
+                        .feature-info {
+                            background: #f0f8ff;
+                            padding: 15px;
+                            border-radius: 8px;
+                            border: 1px solid #b3d9ff;
+                            margin-top: 20px;
+                            font-size: 13px;
+                            color: #2d3748;
+                        }
+                    </style>
+                    
+                    <div class="todo-container">
+                        <div class="todo-header">
+                            <h1>${tabName}</h1>
+                            <p>${description}</p>
+                        </div>
+                        
+                        <div>
+                            <label for="todo-${tabId}" style="display: block; margin-bottom: 8px; font-weight: bold; color: #2d3748;">
+                                📝 ${tabName} Todo リスト
+                            </label>
+                            <textarea 
+                                id="todo-${tabId}" 
+                                class="todo-textarea"
+                                placeholder="ここに${tabName}に関するタスクやメモを入力してください...
+
+例：
+□ 今日やること
+□ 明日の予定
+□ アイデア
+□ 進捗メモ
+
+✓ 完了したタスク
+
+このエリアはブラウザに自動保存されます。"
+                                oninput="saveTodoContent('${tabId}', this.value)"
+                            ></textarea>
+                            
+                            <div class="todo-controls">
+                                <button class="todo-btn" onclick="clearTodoContent('${tabId}')">
+                                    🗑️ クリア
+                                </button>
+                                <button class="todo-btn secondary" onclick="exportTodoContent('${tabId}', '${tabName}')">
+                                    📋 コピー
+                                </button>
+                                <button class="todo-btn secondary" onclick="addTimestamp('${tabId}')">
+                                    📅 日時追加
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-info">
+                            <strong>💡 使い方のヒント:</strong><br>
+                            • テキストは自動保存されます（ブラウザローカルストレージ）<br>
+                            • □ を使ってチェックリスト形式で管理<br>
+                            • ✓ で完了マーク<br>
+                            • 日時追加ボタンで現在時刻を挿入可能
+                        </div>
+                    </div>
+                    
+                    <script>
+                        // ページ読み込み時にTodoコンテンツを復元
+                        document.addEventListener('DOMContentLoaded', function() {
+                            loadTodoContent('${tabId}');
+                        });
+                        
+                        // Todo内容の保存
+                        function saveTodoContent(tabId, content) {
+                            try {
+                                localStorage.setItem('todo-' + tabId, content);
+                            } catch (e) {
+                                console.warn('Todo保存に失敗:', e);
+                            }
+                        }
+                        
+                        // Todo内容の読み込み
+                        function loadTodoContent(tabId) {
+                            try {
+                                const content = localStorage.getItem('todo-' + tabId);
+                                if (content) {
+                                    const textarea = document.getElementById('todo-' + tabId);
+                                    if (textarea) {
+                                        textarea.value = content;
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('Todo読み込みに失敗:', e);
+                            }
+                        }
+                        
+                        // Todo内容のクリア
+                        function clearTodoContent(tabId) {
+                            if (confirm('${tabName}のTodoリストをクリアしますか？')) {
+                                const textarea = document.getElementById('todo-' + tabId);
+                                if (textarea) {
+                                    textarea.value = '';
+                                    saveTodoContent(tabId, '');
+                                }
+                            }
+                        }
+                        
+                        // Todo内容のコピー
+                        function exportTodoContent(tabId, tabName) {
+                            const textarea = document.getElementById('todo-' + tabId);
+                            if (textarea && textarea.value.trim()) {
+                                const content = '=== ' + tabName + ' Todo リスト ===\\n\\n' + textarea.value;
+                                navigator.clipboard.writeText(content).then(() => {
+                                    alert('📋 クリップボードにコピーしました！');
+                                }).catch(() => {
+                                    // フォールバック: テキストエリアを選択
+                                    textarea.select();
+                                    alert('📋 テキストを選択しました。Ctrl+Cでコピーしてください。');
+                                });
+                            } else {
+                                alert('コピーする内容がありません。');
+                            }
+                        }
+                        
+                        // 現在時刻の追加
+                        function addTimestamp(tabId) {
+                            const textarea = document.getElementById('todo-' + tabId);
+                            if (textarea) {
+                                const now = new Date();
+                                const timestamp = now.getFullYear() + '/' + 
+                                    String(now.getMonth() + 1).padStart(2, '0') + '/' + 
+                                    String(now.getDate()).padStart(2, '0') + ' ' + 
+                                    String(now.getHours()).padStart(2, '0') + ':' + 
+                                    String(now.getMinutes()).padStart(2, '0');
+                                
+                                const cursorPos = textarea.selectionStart;
+                                const textBefore = textarea.value.substring(0, cursorPos);
+                                const textAfter = textarea.value.substring(cursorPos);
+                                const newText = textBefore + '\\n📅 ' + timestamp + ' - \\n' + textAfter;
+                                
+                                textarea.value = newText;
+                                textarea.focus();
+                                textarea.setSelectionRange(cursorPos + timestamp.length + 7, cursorPos + timestamp.length + 7);
+                                
+                                saveTodoContent(tabId, newText);
+                            }
+                        }
+                        
+                        // 初期化（このタブが表示された時に実行）
+                        setTimeout(() => loadTodoContent('${tabId}'), 100);
+                    </script>
+                `;
+            }
+
+            // デモタブコンテンツ
+            getDemoTabContent(tabNumber) {
+                return `
+                    <div class="welcome">
+                        <h1>${tabNumber}️⃣ タブ${tabNumber}</h1>
+                        <p>これはタブ${tabNumber}のデモページです。</p>
+                        <br>
+                        <div style="background: #f0f8ff; padding: 20px; border-radius: 10px; border: 2px dashed #667eea;">
+                            <h3>💡 タブ${tabNumber}の機能</h3>
+                            <p>• ここにタブ${tabNumber}専用の機能を実装できます</p>
+                            <p>• 独自のコンテンツやアプリケーションを追加可能</p>
+                            <p>• 必要に応じて外部ページへのリンクも設定できます</p>
+                        </div>
+                        <br>
+                        <div style="text-align: center;">
+                            <button onclick="alert('タブ${tabNumber}のアクションが実行されました！')" 
+                                    style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                                タブ${tabNumber}アクション
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 設定リセット
+            resetSettings() {
+                if (confirm('すべての設定をリセットしますか？')) {
+                    this.settings = {};
+                    this.saveSettings();
+                    this.renderTabs();
+                    this.renderSettings();
+                    this.showApp('welcome');
+                    this.updateStatus('設定をリセットしました');
+                }
+            }
+        }
+
+        // グローバル関数
+        let appManager;
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', async function() {
+            appManager = new AppManager();
+        });
+
+        // 設定パネルの切り替え
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('active');
+        }
+
+        // 設定リセット
+        function resetSettings() {
+            appManager.resetSettings();
+        }
+
+        // 内部タブ切り替え機能（計算グループ用）
+        function showCalcTab(tabName) {
+            // 全ての計算タブコンテンツを非表示
+            document.querySelectorAll('.calc-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 全ての計算タブボタンからactiveクラスを削除
+            document.querySelectorAll('.calc-tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // 選択された計算タブを表示
+            const targetContent = document.getElementById(tabName + '-calc-content');
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+            
+            // 選択された計算タブボタンにactiveクラスを追加
+            event.target.classList.add('active');
+            
+            // フォーカスを最初の入力フィールドに移動
+            setTimeout(() => {
+                const firstInput = document.querySelector('#calc-' + tabName + '1');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        }
+
+        // 内部タブ用計算機能
+        function calculateCalc(operation) {
+            const num1 = parseFloat(document.getElementById('calc-' + operation + '1').value);
+            const num2Element = document.getElementById('calc-' + operation + '2');
+            const num2 = num2Element ? parseFloat(num2Element.value) : null;
+            
+            let result;
+            let symbol;
+            let displayText;
+            
+            switch(operation) {
+                case 'add':
+                    if (isNaN(num1) || isNaN(num2)) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '有効な数値を入力してください';
+                        return;
+                    }
+                    result = num1 + num2;
+                    displayText = `${num1} + ${num2} = ${result}`;
+                    break;
+                case 'subtract':
+                    if (isNaN(num1) || isNaN(num2)) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '有効な数値を入力してください';
+                        return;
+                    }
+                    result = num1 - num2;
+                    displayText = `${num1} - ${num2} = ${result}`;
+                    break;
+                case 'multiply':
+                    if (isNaN(num1) || isNaN(num2)) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '有効な数値を入力してください';
+                        return;
+                    }
+                    result = num1 * num2;
+                    displayText = `${num1} × ${num2} = ${result}`;
+                    break;
+                case 'divide':
+                    if (isNaN(num1) || isNaN(num2)) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '有効な数値を入力してください';
+                        return;
+                    }
+                    if (num2 === 0) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '0で割ることはできません';
+                        return;
+                    }
+                    result = num1 / num2;
+                    result = Math.round(result * 1000000) / 1000000;
+                    displayText = `${num1} ÷ ${num2} = ${result}`;
+                    break;
+                case 'power':
+                    if (isNaN(num1) || isNaN(num2)) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '有効な数値を入力してください';
+                        return;
+                    }
+                    result = Math.pow(num1, num2);
+                    displayText = `${num1}^${num2} = ${result}`;
+                    break;
+                case 'sqrt':
+                    if (isNaN(num1)) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '有効な数値を入力してください';
+                        return;
+                    }
+                    if (num1 < 0) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '負の数の平方根は計算できません';
+                        return;
+                    }
+                    result = Math.sqrt(num1);
+                    result = Math.round(result * 1000000) / 1000000;
+                    displayText = `√${num1} = ${result}`;
+                    break;
+                case 'percent':
+                    if (isNaN(num1) || isNaN(num2)) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '有効な数値を入力してください';
+                        return;
+                    }
+                    if (num1 === 0) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '全体の値が0では計算できません';
+                        return;
+                    }
+                    result = (num2 / num1) * 100;
+                    result = Math.round(result * 100) / 100;
+                    displayText = `${num2}は${num1}の${result}%`;
+                    break;
+                case 'factorial':
+                    if (isNaN(num1) || num1 < 0 || num1 !== Math.floor(num1)) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '0以上の整数を入力してください';
+                        return;
+                    }
+                    if (num1 > 20) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '20以下の数値を入力してください';
+                        return;
+                    }
+                    result = 1;
+                    for (let i = 2; i <= num1; i++) {
+                        result *= i;
+                    }
+                    displayText = `${num1}! = ${result}`;
+                    break;
+                case 'modulo':
+                    if (isNaN(num1) || isNaN(num2)) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '有効な数値を入力してください';
+                        return;
+                    }
+                    if (num2 === 0) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '0で割ることはできません';
+                        return;
+                    }
+                    result = num1 % num2;
+                    displayText = `${num1} mod ${num2} = ${result}`;
+                    break;
+                case 'round':
+                    if (isNaN(num1) || isNaN(num2)) {
+                        document.getElementById('calc-' + operation + '-result').textContent = '有効な数値を入力してください';
+                        return;
+                    }
+                    const decimals = Math.max(0, Math.min(10, Math.floor(num2)));
+                    result = Math.round(num1 * Math.pow(10, decimals)) / Math.pow(10, decimals);
+                    displayText = `${num1}を小数点以下${decimals}桁で四捨五入: ${result}`;
+                    break;
+                default:
+                    return;
+            }
+            
+            document.getElementById('calc-' + operation + '-result').textContent = displayText;
+        }
+
+        // 既存の計算機能（従来のアプリ用）
+        function calculate(operation) {
+            const num1 = parseFloat(document.getElementById(operation + '1').value);
+            const num2 = parseFloat(document.getElementById(operation + '2').value);
+            
+            if (isNaN(num1) || isNaN(num2)) {
+                document.getElementById(operation + '-result').textContent = '有効な数値を入力してください';
+                return;
+            }
+            
+            let result;
+            let symbol;
+            
+            switch(operation) {
+                case 'add':
+                    result = num1 + num2;
+                    symbol = '+';
+                    break;
+                case 'sub':
+                    result = num1 - num2;
+                    symbol = '-';
+                    break;
+                case 'mul':
+                    result = num1 * num2;
+                    symbol = '×';
+                    break;
+                case 'div':
+                    if (num2 === 0) {
+                        document.getElementById(operation + '-result').textContent = '0で割ることはできません';
+                        return;
+                    }
+                    result = num1 / num2;
+                    symbol = '÷';
+                    break;
+                default:
+                    return;
+            }
+            
+            document.getElementById(operation + '-result').textContent = 
+                `${num1} ${symbol} ${num2} = ${result}`;
+        }
+
+        // キーボードショートカット
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && !e.shiftKey && !e.altKey) {
+                // 計算グループの内部タブ切り替え（Ctrl+1-4）
+                if (document.querySelector('.calc-tab-button')) {
+                    switch(e.key) {
+                        case '1':
+                            e.preventDefault();
+                            showCalcTab('add');
+                            break;
+                        case '2':
+                            e.preventDefault();
+                            showCalcTab('subtract');
+                            break;
+                        case '3':
+                            e.preventDefault();
+                            showCalcTab('multiply');
+                            break;
+                        case '4':
+                            e.preventDefault();
+                            showCalcTab('divide');
+                            break;
+                    }
+                } else {
+                    // 通常のアプリ切り替え（Ctrl+1-9）
+                    const key = parseInt(e.key);
+                    if (key >= 1 && key <= 9) {
+                        e.preventDefault();
+                        const apps = Array.from(appManager.apps.values()).filter(app => 
+                            (appManager.settings[app.id] !== false && app.enabled !== false) ||
+                            app.category === 'system'
+                        );
+                        if (apps[key - 1]) {
+                            appManager.showApp(apps[key - 1].id);
+                        }
+                    }
+                }
+            }
+        });
+
+        // Enter キーで計算実行
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && appManager.activeApp) {
+                const activeApp = appManager.activeApp;
+                if (['addition', 'subtraction', 'multiplication', 'division'].includes(activeApp)) {
+                    const operation = activeApp === 'addition' ? 'add' :
+                                    activeApp === 'subtraction' ? 'sub' :
+                                    activeApp === 'multiplication' ? 'mul' : 'div';
+                    calculate(operation);
+                }
+            }
+        });
+
+        // サービスワーカー登録（PWA対応の準備）
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                // 今後PWA対応時に実装
+            });
+        }
+    </script>
+</body>
+</html>

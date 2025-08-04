@@ -5,16 +5,16 @@
       "name": "時間管理",
       "icon": "⏰",
       "category": "productivity",
-      "type": "content",
-      "description": "時間の管理と効率化ツール"
+      "type": "time-management-tabs",
+      "description": "時間の管理と効率化ツール（内部タブ対応）"
     },
     {
       "id": "tab2", 
-      "name": "体系管理",
-      "icon": "📋",
-      "category": "organization",
+      "name": "体型管理",
+      "icon": "🏃‍♀️",
+      "category": "health",
       "type": "content",
-      "description": "体系的な情報管理システム"
+      "description": "体型維持と健康管理システム"
     },
     {
       "id": "tab3",
@@ -42,11 +42,11 @@
     },
     {
       "id": "tab6",
-      "name": "タブ6",
-      "icon": "6️⃣",
-      "category": "tab",
+      "name": "部屋片付け",
+      "icon": "🧹",
+      "category": "lifestyle",
       "type": "content",
-      "description": "カスタマイズ可能なタブ6"
+      "description": "部屋の整理整頓と清掃管理"
     },
     {
       "id": "tab7",
@@ -74,11 +74,11 @@
     },
     {
       "id": "tab10",
-      "name": "タブ10",
-      "icon": "🔟",
-      "category": "tab",
+      "name": "今後の方針",
+      "icon": "📋",
+      "category": "development",
       "type": "content",
-      "description": "カスタマイズ可能なタブ10"
+      "description": "Todoリスト開発用・今後の方針"
     }
   ]
 }
