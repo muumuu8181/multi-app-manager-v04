@@ -59,11 +59,11 @@ class AppManager {
                     },
                     {
                         "id": "tab4",
-                        "name": "女性管理",
+                        "name": "W管理",
                         "icon": "👩",
                         "category": "lifestyle",
                         "type": "content", 
-                        "description": "女性向けライフスタイル管理"
+                        "description": "W管理システム"
                     },
                     {
                         "id": "tab5",
@@ -431,7 +431,7 @@ class AppManager {
                         {id: 'tab1', name: '⏰ 時間管理'},
                         {id: 'tab2', name: '🏃‍♀️ 体型管理'},
                         {id: 'tab3', name: '💼 仕事管理'},
-                        {id: 'tab4', name: '👩 女性管理'},
+                        {id: 'tab4', name: '👩 W管理'},
                         {id: 'tab6', name: '🧹 部屋片付け'},
                         {id: 'tab7', name: '7️⃣ タブ7'},
                         {id: 'tab8', name: '8️⃣ タブ8'},
