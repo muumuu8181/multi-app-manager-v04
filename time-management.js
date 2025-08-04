@@ -792,32 +792,140 @@ function formatDuration(seconds) {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-// 今日の記録読み込み
-function loadTodayRecords() {
-    const records = JSON.parse(localStorage.getItem('timeRecords') || '[]');
-    const today = new Date().toDateString();
-    const todayRecords = records.filter(record => record.date === today);
-    
+// 今日の記録読み込み（Firebase + ローカル統合版）
+async function loadTodayRecords() {
     const recordsList = document.getElementById('records-list');
     if (!recordsList) {
         console.warn('records-list要素が見つかりません');
         return;
     }
     
+    // ローディング表示
+    recordsList.innerHTML = '<div style="text-align: center; padding: 20px;">📡 記録を読み込み中...</div>';
+    
+    try {
+        // 1. ローカルストレージから読み込み
+        const localRecords = JSON.parse(localStorage.getItem('timeRecords') || '[]');
+        
+        // 2. Firebaseから読み込み（ログイン時のみ）
+        let firebaseRecords = [];
+        if (window.firebaseDataCore && firebase.auth().currentUser) {
+            console.log('🔥 Firebaseから記録を取得中...');
+            firebaseRecords = await loadFirebaseRecords();
+        }
+        
+        // 3. データを統合（重複除去）
+        const allRecords = mergeRecords(localRecords, firebaseRecords);
+        
+        // 4. 今日の記録のみフィルタ
+        const today = new Date().toDateString();
+        const todayRecords = allRecords.filter(record => record.date === today);
+        
+        // 5. 統合データをローカルストレージに保存（同期効果）
+        localStorage.setItem('timeRecords', JSON.stringify(allRecords));
+        
+        // 6. 表示
+        displayRecords(todayRecords);
+        
+        console.log(`✅ 記録読み込み完了: ローカル${localRecords.length}件 + Firebase${firebaseRecords.length}件 = 統合${allRecords.length}件 (今日${todayRecords.length}件)`);
+        
+    } catch (error) {
+        console.error('❌ 記録読み込みエラー:', error);
+        // エラー時はローカルのみ表示
+        const localRecords = JSON.parse(localStorage.getItem('timeRecords') || '[]');
+        const today = new Date().toDateString();
+        const todayRecords = localRecords.filter(record => record.date === today);
+        displayRecords(todayRecords);
+    }
+}
+
+// Firebaseから記録を読み込む
+async function loadFirebaseRecords() {
+    return new Promise((resolve, reject) => {
+        if (!window.firebaseDataCore || !firebase.auth().currentUser) {
+            resolve([]);
+            return;
+        }
+        
+        const user = firebase.auth().currentUser;
+        const recordsRef = firebase.database().ref(`users/${user.uid}/multi-app-data`);
+        
+        recordsRef.once('value', (snapshot) => {
+            try {
+                const data = snapshot.val();
+                if (!data) {
+                    resolve([]);
+                    return;
+                }
+                
+                // Firebase データを配列形式に変換
+                const records = [];
+                Object.keys(data).forEach(key => {
+                    if (data[key] && data[key].activity) {
+                        // 時間記録データの場合
+                        records.push({
+                            id: key,
+                            ...data[key],
+                            source: 'firebase'
+                        });
+                    }
+                });
+                
+                console.log(`🔥 Firebase記録取得: ${records.length}件`);
+                resolve(records);
+                
+            } catch (error) {
+                console.error('Firebase データ解析エラー:', error);
+                resolve([]);
+            }
+        }, (error) => {
+            console.error('Firebase 読み込みエラー:', error);
+            resolve([]);
+        });
+    });
+}
+
+// ローカルとFirebaseのデータを統合（重複除去）
+function mergeRecords(localRecords, firebaseRecords) {
+    const merged = [...localRecords];
+    const existingIds = new Set(localRecords.map(r => r.id));
+    
+    // Firebaseの記録で重複しないものを追加
+    firebaseRecords.forEach(record => {
+        if (!existingIds.has(record.id)) {
+            merged.push(record);
+        }
+    });
+    
+    // 時間順でソート（新しい順）
+    merged.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+    
+    return merged;
+}
+
+// 記録を表示
+function displayRecords(todayRecords) {
+    const recordsList = document.getElementById('records-list');
+    
     if (todayRecords.length === 0) {
-        recordsList.innerHTML = '今日の記録はありません';
+        recordsList.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">今日の記録はありません</div>';
         return;
     }
     
     let html = '';
     let totalDuration = 0;
+    
     todayRecords.forEach(record => {
         totalDuration += record.duration || 0;
         const startTime = new Date(record.startTime).toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'});
         const endTime = new Date(record.endTime).toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'});
+        
+        // データソース表示（デバッグ用）
+        const sourceIcon = record.source === 'firebase' ? '☁️' : '💾';
+        
         html += `
-            <div class="record-item-compact">
-                ${record.activity} ${startTime}-${endTime} (${formatDuration(record.duration)})
+            <div class="record-item-compact" title="${record.source || 'local'} - ${record.id}">
+                ${record.activity} ${startTime}-${endTime} (${formatDuration(record.duration)}) ${sourceIcon}
             </div>
         `;
     });
@@ -828,10 +936,12 @@ function loadTodayRecords() {
             📊 今日の合計: ${formatDuration(totalDuration)} (${todayRecords.length}件)
         </div>
         ${html}
+        <div style="font-size: 10px; color: #888; text-align: center; margin-top: 10px;">
+            💾ローカル ☁️Firebase
+        </div>
     `;
     
     recordsList.innerHTML = html;
-    console.log('✅ 今日の記録を読み込みました:', todayRecords.length + '件');
 }
 
 // タブ表示時の初期化イベント（グローバル）
