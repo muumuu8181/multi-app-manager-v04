@@ -624,6 +624,32 @@ function updateConnectionStatus(connected) {
     }
 }
 
+// デバッグ付きログイン
+function debugAndLogin() {
+    // 詳細デバッグ情報を表示
+    const debugInfo = {
+        'Firebase SDK': typeof firebase !== 'undefined' ? '✅' : '❌',
+        'FirebaseAuthCore Class': typeof FirebaseAuthCore !== 'undefined' ? '✅' : '❌',
+        'firebaseAuthCore Instance': window.firebaseAuthCore ? '✅' : '❌',
+        'isInitialized': window.firebaseAuthCore?.isInitialized ? '✅' : '❌'
+    };
+    
+    let debugMessage = '🔍 デバッグ情報:\n';
+    for (const [key, value] of Object.entries(debugInfo)) {
+        debugMessage += `${key}: ${value}\n`;
+    }
+    
+    console.log(debugMessage);
+    alert(debugMessage);
+    
+    // Firebase が利用可能な場合のみログイン実行
+    if (window.firebaseAuthCore?.isInitialized) {
+        signInWithGoogle();
+    } else {
+        alert('Firebase初期化が完了していません。しばらく待ってから再試行してください。');
+    }
+}
+
 // Google認証
 async function signInWithGoogle() {
     try {
