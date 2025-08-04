@@ -159,6 +159,10 @@
                 this.callbacks.onError.push(callback);
             }
         }
+        
+        // グローバル変数初期化
+        window.firebaseAuthCore = null;
+        window.firebaseDataCore = null;
     </script>
 </head>
 <body>

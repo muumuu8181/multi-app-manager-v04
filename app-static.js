@@ -517,27 +517,27 @@ async function initializeFirebaseStatic() {
         console.log('✅ Firebase SDK確認完了');
         
         // Firebase Auth Core 初期化
-        firebaseAuthCore = new FirebaseAuthCore();
-        await firebaseAuthCore.init(firebaseConfig);
+        window.firebaseAuthCore = new FirebaseAuthCore();
+        await window.firebaseAuthCore.init(firebaseConfig);
         
         // Firebase Data Core 初期化
-        firebaseDataCore = new FirebaseDataCore();
-        firebaseDataCore.init(firebaseConfig, 'multi-app-data');
+        window.firebaseDataCore = new FirebaseDataCore();
+        window.firebaseDataCore.init(firebaseConfig, 'multi-app-data');
         
         // 認証状態変更のリスナー
-        firebaseAuthCore.onAuthStateChange((user) => {
+        window.firebaseAuthCore.onAuthStateChange((user) => {
             updateAuthUI(user);
-            firebaseDataCore.setupUserData(user);
+            window.firebaseDataCore.setupUserData(user);
         });
         
         // 接続状態変更のリスナー
-        firebaseDataCore.onConnectionChange((connected) => {
+        window.firebaseDataCore.onConnectionChange((connected) => {
             console.log('🔄 データベース接続状態変更:', connected);
             updateConnectionStatus(connected);
         });
         
         // データエラーのリスナー
-        firebaseDataCore.onError((error) => {
+        window.firebaseDataCore.onError((error) => {
             console.error('🚨 Firebase Data Error:', error);
             document.getElementById('statusBar').textContent = `❌ DB接続エラー: ${error.message}`;
         });
@@ -598,7 +598,23 @@ function updateConnectionStatus(connected) {
 // Google認証
 async function signInWithGoogle() {
     try {
+        // Firebase初期化確認
+        if (!firebaseAuthCore) {
+            console.error('❌ Firebase Auth Core が初期化されていません');
+            alert('Firebase認証が初期化されていません。ページを再読み込みしてください。');
+            return;
+        }
+        
+        if (!firebaseAuthCore.isInitialized) {
+            console.error('❌ Firebase Auth Core の初期化が完了していません');
+            alert('Firebase認証の初期化中です。少し待ってから再試行してください。');
+            return;
+        }
+        
+        console.log('🔑 Googleログイン開始...');
         await firebaseAuthCore.signInWithGoogle();
+        console.log('✅ ログイン成功');
+        
     } catch (error) {
         console.error('ログインエラー:', error);
         alert('ログインに失敗しました: ' + error.message);
