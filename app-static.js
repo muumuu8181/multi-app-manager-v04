@@ -482,17 +482,27 @@ let firebaseAuthCore, firebaseDataCore;
 
 // 初期化
 document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🔄 DOMContentLoaded - 初期化開始');
+    
     try {
         // Firebase初期化（静的サイト版）
+        console.log('🔄 Firebase初期化開始...');
         await initializeFirebaseStatic();
+        console.log('✅ Firebase初期化完了');
         
         // アプリマネージャー初期化
+        console.log('🔄 AppManager初期化開始...');
         appManager = new AppManager();
+        console.log('✅ AppManager初期化完了');
         
         console.log('✅ Multi-App Manager v0.5 (Static) 初期化完了');
+        console.log('🔍 firebaseAuthCore状態:', window.firebaseAuthCore);
+        console.log('🔍 firebaseDataCore状態:', window.firebaseDataCore);
+        
     } catch (error) {
         console.error('❌ 初期化エラー:', error);
-        document.getElementById('statusBar').textContent = '初期化エラーが発生しました';
+        console.error('❌ エラーの詳細:', error.stack);
+        document.getElementById('statusBar').textContent = `初期化エラー: ${error.message}`;
     }
 });
 
@@ -514,15 +524,34 @@ async function initializeFirebaseStatic() {
             throw new Error('Firebase SDK not loaded');
         }
         
+        // FirebaseAuthCore クラスの存在確認
+        if (typeof FirebaseAuthCore === 'undefined') {
+            console.error('❌ FirebaseAuthCore クラスが定義されていません');
+            throw new Error('FirebaseAuthCore class not defined');
+        }
+        
+        // FirebaseDataCore クラスの存在確認  
+        if (typeof FirebaseDataCore === 'undefined') {
+            console.error('❌ FirebaseDataCore クラスが定義されていません');
+            throw new Error('FirebaseDataCore class not defined');
+        }
+        
         console.log('✅ Firebase SDK確認完了');
+        console.log('✅ Firebase Core クラス確認完了');
         
         // Firebase Auth Core 初期化
+        console.log('🔄 FirebaseAuthCore インスタンス作成中...');
         window.firebaseAuthCore = new FirebaseAuthCore();
+        console.log('🔄 FirebaseAuthCore init実行中...');
         await window.firebaseAuthCore.init(firebaseConfig);
+        console.log('✅ FirebaseAuthCore 初期化完了');
         
         // Firebase Data Core 初期化
+        console.log('🔄 FirebaseDataCore インスタンス作成中...');
         window.firebaseDataCore = new FirebaseDataCore();
+        console.log('🔄 FirebaseDataCore init実行中...');
         window.firebaseDataCore.init(firebaseConfig, 'multi-app-data');
+        console.log('✅ FirebaseDataCore 初期化完了');
         
         // 認証状態変更のリスナー
         window.firebaseAuthCore.onAuthStateChange((user) => {
