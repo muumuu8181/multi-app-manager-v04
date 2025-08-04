@@ -26,9 +26,140 @@
         
         // グローバルに公開
         window.firebaseConfig = firebaseConfig;
+        
+        // Firebase Auth Core - インライン版
+        class FirebaseAuthCore {
+            constructor() {
+                this.user = null;
+                this.auth = null;
+                this.callbacks = {
+                    onAuthStateChanged: [],
+                    onLoginSuccess: [],
+                    onLoginError: [],
+                    onLogoutSuccess: []
+                };
+                this.isInitialized = false;
+            }
+
+            init(firebaseConfig) {
+                try {
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(firebaseConfig);
+                    }
+                    
+                    this.auth = firebase.auth();
+                    this.setupAuthStateListener();
+                    this.isInitialized = true;
+                    
+                    console.log('🔥 Firebase Auth Core initialized successfully');
+                } catch (error) {
+                    console.error('❌ Firebase Auth Core initialization failed:', error);
+                    throw error;
+                }
+            }
+
+            setupAuthStateListener() {
+                this.auth.onAuthStateChanged((user) => {
+                    this.user = user;
+                    this.callbacks.onAuthStateChanged.forEach(callback => callback(user));
+                });
+            }
+
+            async signInWithGoogle() {
+                try {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    const result = await this.auth.signInWithPopup(provider);
+                    this.callbacks.onLoginSuccess.forEach(callback => callback(result.user));
+                    return result.user;
+                } catch (error) {
+                    this.callbacks.onLoginError.forEach(callback => callback(error));
+                    throw error;
+                }
+            }
+
+            async signOut() {
+                try {
+                    await this.auth.signOut();
+                    this.callbacks.onLogoutSuccess.forEach(callback => callback());
+                } catch (error) {
+                    console.error('❌ Sign out error:', error);
+                    throw error;
+                }
+            }
+
+            onAuthStateChange(callback) {
+                this.callbacks.onAuthStateChanged.push(callback);
+            }
+        }
+
+        // Firebase Data Core - インライン版
+        class FirebaseDataCore {
+            constructor() {
+                this.database = null;
+                this.userRef = null;
+                this.dataType = null;
+                this.callbacks = {
+                    onConnectionChange: [],
+                    onError: []
+                };
+            }
+
+            init(firebaseConfig, dataType = 'app-data') {
+                try {
+                    this.database = firebase.database();
+                    this.dataType = dataType;
+                    this.setupConnectionListener();
+                    console.log('🔥 Firebase Data Core initialized successfully');
+                } catch (error) {
+                    console.error('❌ Firebase Data Core initialization failed:', error);
+                    throw error;
+                }
+            }
+
+            setupUserData(user) {
+                if (user) {
+                    this.userRef = this.database.ref(`users/${user.uid}/${this.dataType}`);
+                    console.log('✅ User data reference set up');
+                } else {
+                    this.userRef = null;
+                }
+            }
+
+            setupConnectionListener() {
+                const connectedRef = this.database.ref('.info/connected');
+                connectedRef.on('value', (snapshot) => {
+                    const connected = snapshot.val();
+                    this.callbacks.onConnectionChange.forEach(callback => callback(connected));
+                });
+            }
+
+            async addData(data) {
+                if (!this.userRef) {
+                    throw new Error('User not authenticated');
+                }
+                
+                try {
+                    const newRef = this.userRef.push();
+                    await newRef.set({
+                        ...data,
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    return newRef.key;
+                } catch (error) {
+                    this.callbacks.onError.forEach(callback => callback(error));
+                    throw error;
+                }
+            }
+
+            onConnectionChange(callback) {
+                this.callbacks.onConnectionChange.push(callback);
+            }
+
+            onError(callback) {
+                this.callbacks.onError.push(callback);
+            }
+        }
     </script>
-    <script src="firebase-auth-template/core/firebase-auth.js"></script>
-    <script src="firebase-auth-template/core/firebase-data.js"></script>
 </head>
 <body>
     <div class="version-badge">v0.5</div>
