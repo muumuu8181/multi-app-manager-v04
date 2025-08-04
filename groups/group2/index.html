@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>応用計算グループ - マルチアプリ管理ツール</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            margin: 0 15px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            font-size: 16px;
+            display: inline-block;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .app-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+        }
+
+        .app-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .app-card.coming-soon {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .app-card.coming-soon:hover {
+            transform: none;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .app-card .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .app-card h3 {
+            color: white;
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .app-card p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .app-card a {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            height: 100%;
+        }
+
+        .coming-soon-label {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .stats h2 {
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* モバイル対応 */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .header p {
+                font-size: 16px;
+            }
+
+            .nav-links a {
+                margin: 5px;
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+
+            .apps-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .app-card {
+                padding: 20px;
+            }
+
+            .app-card .icon {
+                font-size: 36px;
+            }
+
+            .app-card h3 {
+                font-size: 18px;
+            }
+        }
+
+        /* ダークモード対応 */
+        @media (prefers-color-scheme: dark) {
+            .app-card {
+                background: rgba(30, 30, 30, 0.3);
+            }
+
+            .stats {
+                background: rgba(30, 30, 30, 0.3);
+            }
+
+            .stat-item {
+                background: rgba(30, 30, 30, 0.3);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ 応用計算グループ</h1>
+            <p>高度な数学計算とユーティリティアプリケーション</p>
+        </div>
+
+        <div class="nav-links">
+            <a href="../../index.html">🏠 メインホーム</a>
+            <a href="../group1/index.html">📊 基本計算グループ</a>
+        </div>
+
+        <div class="stats">
+            <h2>グループ情報</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">6</span>
+                    <span class="stat-label">予定アプリ</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">応用</span>
+                    <span class="stat-label">難易度</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">高度</span>
+                    <span class="stat-label">計算種類</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">開発中</span>
+                    <span class="stat-label">ステータス</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="apps-grid">
+            <div class="app-card coming-soon">
+                <span class="icon">📈</span>
+                <h3>累乗計算機</h3>
+                <p>指数計算を行います。2の3乗、10の2乗などの計算が可能です。</p>
+                <span class="coming-soon-label">Coming Soon</span>
+            </div>
+
+            <div class="app-card coming-soon">
+                <span class="icon">√</span>
+                <h3>平方根計算機</h3>
+                <p>平方根（ルート）の計算を行います。√9 = 3 のような計算が可能です。</p>
+                <span class="coming-soon-label">Coming Soon</span>
+            </div>
+
+            <div class="app-card coming-soon">
+                <span class="icon">％</span>
+                <h3>パーセント計算機</h3>
+                <p>パーセンテージの計算を行います。割引計算や税率計算に便利です。</p>
+                <span class="coming-soon-label">Coming Soon</span>
+            </div>
+
+            <div class="app-card coming-soon">
+                <span class="icon">📐</span>
+                <h3>三角関数計算機</h3>
+                <p>sin、cos、tanなどの三角関数の計算を行います。</p>
+                <span class="coming-soon-label">Coming Soon</span>
+            </div>
+
+            <div class="app-card coming-soon">
+                <span class="icon">🔢</span>
+                <h3>進数変換計算機</h3>
+                <p>2進数、8進数、16進数などの進数変換を行います。</p>
+                <span class="coming-soon-label">Coming Soon</span>
+            </div>
+
+            <div class="app-card coming-soon">
+                <span class="icon">📊</span>
+                <h3>統計計算機</h3>
+                <p>平均値、中央値、標準偏差などの統計計算を行います。</p>
+                <span class="coming-soon-label">Coming Soon</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Coming Soonカードのクリック処理
+        document.querySelectorAll('.app-card.coming-soon').forEach(card => {
+            card.addEventListener('click', function() {
+                alert('このアプリは開発中です。しばらくお待ちください。');
+            });
+        });
+
+        // カード要素にホバーエフェクトを追加（Coming Soon以外）
+        document.querySelectorAll('.app-card:not(.coming-soon)').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // キーボードショートカット
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && !e.shiftKey && !e.altKey) {
+                switch(e.key) {
+                    case 'h':
+                        e.preventDefault();
+                        location.href = '../../index.html';
+                        break;
+                    case 'b':
+                        e.preventDefault();
+                        location.href = '../group1/index.html';
+                        break;
+                }
+            }
+        });
+
+        // 統計情報の更新
+        console.log('応用計算グループが読み込まれました（開発中）');
+    </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+{
+  "tabs": [
+    {
+      "id": "tab1",
+      "name": "時間管理",
+      "icon": "⏰",
+      "category": "productivity",
+      "type": "content",
+      "description": "時間の管理と効率化ツール"
+    },
+    {
+      "id": "tab2", 
+      "name": "体系管理",
+      "icon": "📋",
+      "category": "organization",
+      "type": "content",
+      "description": "体系的な情報管理システム"
+    },
+    {
+      "id": "tab3",
+      "name": "仕事管理", 
+      "icon": "💼",
+      "category": "work",
+      "type": "content",
+      "description": "業務とプロジェクトの管理"
+    },
+    {
+      "id": "tab4",
+      "name": "女性管理",
+      "icon": "👩",
+      "category": "lifestyle",
+      "type": "content", 
+      "description": "女性向けライフスタイル管理"
+    },
+    {
+      "id": "tab5",
+      "name": "計算グループ",
+      "icon": "🧮",
+      "category": "tools",
+      "type": "calculator-tabs",
+      "description": "各種計算機能（内部タブ）"
+    },
+    {
+      "id": "tab6",
+      "name": "タブ6",
+      "icon": "6️⃣",
+      "category": "tab",
+      "type": "content",
+      "description": "カスタマイズ可能なタブ6"
+    },
+    {
+      "id": "tab7",
+      "name": "タブ7",
+      "icon": "7️⃣", 
+      "category": "tab",
+      "type": "content",
+      "description": "カスタマイズ可能なタブ7"
+    },
+    {
+      "id": "tab8",
+      "name": "タブ8",
+      "icon": "8️⃣",
+      "category": "tab", 
+      "type": "content",
+      "description": "カスタマイズ可能なタブ8"
+    },
+    {
+      "id": "tab9",
+      "name": "タブ9",
+      "icon": "9️⃣",
+      "category": "tab",
+      "type": "content", 
+      "description": "カスタマイズ可能なタブ9"
+    },
+    {
+      "id": "tab10",
+      "name": "タブ10",
+      "icon": "🔟",
+      "category": "tab",
+      "type": "content",
+      "description": "カスタマイズ可能なタブ10"
+    }
+  ]
+}
