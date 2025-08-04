@@ -499,6 +499,23 @@ document.addEventListener('DOMContentLoaded', async function() {
 // Firebase初期化関数（静的サイト版）
 async function initializeFirebaseStatic() {
     try {
+        // プロトコルチェック
+        console.log('🔍 現在のプロトコル:', location.protocol);
+        console.log('🔍 現在のホスト:', location.host);
+        
+        if (location.protocol !== 'https:' && location.protocol !== 'http:') {
+            console.error('❌ 不正なプロトコル:', location.protocol);
+            throw new Error(`不正なプロトコル: ${location.protocol}`);
+        }
+        
+        // Firebase SDKの存在確認
+        if (typeof firebase === 'undefined') {
+            console.error('❌ Firebase SDK が読み込まれていません');
+            throw new Error('Firebase SDK not loaded');
+        }
+        
+        console.log('✅ Firebase SDK確認完了');
+        
         // Firebase Auth Core 初期化
         firebaseAuthCore = new FirebaseAuthCore();
         await firebaseAuthCore.init(firebaseConfig);
