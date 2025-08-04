@@ -541,35 +541,74 @@ async function initializeFirebaseStatic() {
         
         // Firebase Auth Core 初期化
         console.log('🔄 FirebaseAuthCore インスタンス作成中...');
-        window.firebaseAuthCore = new FirebaseAuthCore();
+        try {
+            window.firebaseAuthCore = new FirebaseAuthCore();
+            console.log('✅ FirebaseAuthCore インスタンス作成完了');
+        } catch (error) {
+            console.error('❌ FirebaseAuthCore インスタンス作成失敗:', error);
+            throw new Error(`FirebaseAuthCore constructor failed: ${error.message}`);
+        }
+        
         console.log('🔄 FirebaseAuthCore init実行中...');
-        await window.firebaseAuthCore.init(firebaseConfig);
-        console.log('✅ FirebaseAuthCore 初期化完了');
+        try {
+            await window.firebaseAuthCore.init(firebaseConfig);
+            console.log('✅ FirebaseAuthCore 初期化完了');
+        } catch (error) {
+            console.error('❌ FirebaseAuthCore init失敗:', error);
+            throw new Error(`FirebaseAuthCore init failed: ${error.message}`);
+        }
         
         // Firebase Data Core 初期化
         console.log('🔄 FirebaseDataCore インスタンス作成中...');
-        window.firebaseDataCore = new FirebaseDataCore();
+        try {
+            window.firebaseDataCore = new FirebaseDataCore();
+            console.log('✅ FirebaseDataCore インスタンス作成完了');
+        } catch (error) {
+            console.error('❌ FirebaseDataCore インスタンス作成失敗:', error);
+            throw new Error(`FirebaseDataCore constructor failed: ${error.message}`);
+        }
+        
         console.log('🔄 FirebaseDataCore init実行中...');
-        window.firebaseDataCore.init(firebaseConfig, 'multi-app-data');
-        console.log('✅ FirebaseDataCore 初期化完了');
+        try {
+            window.firebaseDataCore.init(firebaseConfig, 'multi-app-data');
+            console.log('✅ FirebaseDataCore 初期化完了');
+        } catch (error) {
+            console.error('❌ FirebaseDataCore init失敗:', error);
+            throw new Error(`FirebaseDataCore init failed: ${error.message}`);
+        }
         
         // 認証状態変更のリスナー
-        window.firebaseAuthCore.onAuthStateChange((user) => {
-            updateAuthUI(user);
-            window.firebaseDataCore.setupUserData(user);
-        });
+        try {
+            window.firebaseAuthCore.onAuthStateChange((user) => {
+                updateAuthUI(user);
+                window.firebaseDataCore.setupUserData(user);
+            });
+            console.log('✅ Auth state listener 設定完了');
+        } catch (error) {
+            console.error('❌ Auth state listener 設定失敗:', error);
+        }
         
         // 接続状態変更のリスナー
-        window.firebaseDataCore.onConnectionChange((connected) => {
-            console.log('🔄 データベース接続状態変更:', connected);
-            updateConnectionStatus(connected);
-        });
+        try {
+            window.firebaseDataCore.onConnectionChange((connected) => {
+                console.log('🔄 データベース接続状態変更:', connected);
+                updateConnectionStatus(connected);
+            });
+            console.log('✅ Connection listener 設定完了');
+        } catch (error) {
+            console.error('❌ Connection listener 設定失敗:', error);
+        }
         
         // データエラーのリスナー
-        window.firebaseDataCore.onError((error) => {
-            console.error('🚨 Firebase Data Error:', error);
-            document.getElementById('statusBar').textContent = `❌ DB接続エラー: ${error.message}`;
-        });
+        try {
+            window.firebaseDataCore.onError((error) => {
+                console.error('🚨 Firebase Data Error:', error);
+                document.getElementById('statusBar').textContent = `❌ DB接続エラー: ${error.message}`;
+            });
+            console.log('✅ Data error listener 設定完了');
+        } catch (error) {
+            console.error('❌ Data error listener 設定失敗:', error);
+        }
         
         console.log('🔥 Firebase (Static) 初期化完了');
     } catch (error) {
