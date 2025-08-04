@@ -27,33 +27,58 @@
         // グローバルに公開
         window.firebaseConfig = firebaseConfig;
         
-        // Firebase Auth Core - インライン版
+        // Firebase Auth Core - インライン版（デバッグ強化）
         class FirebaseAuthCore {
             constructor() {
-                this.user = null;
-                this.auth = null;
-                this.callbacks = {
-                    onAuthStateChanged: [],
-                    onLoginSuccess: [],
-                    onLoginError: [],
-                    onLogoutSuccess: []
-                };
-                this.isInitialized = false;
+                console.log('🎯 FirebaseAuthCore constructor 開始');
+                try {
+                    this.user = null;
+                    this.auth = null;
+                    this.callbacks = {
+                        onAuthStateChanged: [],
+                        onLoginSuccess: [],
+                        onLoginError: [],
+                        onLogoutSuccess: []
+                    };
+                    this.isInitialized = false;
+                    console.log('✅ FirebaseAuthCore constructor 完了');
+                } catch (error) {
+                    console.error('❌ FirebaseAuthCore constructor エラー:', error);
+                    throw error;
+                }
             }
 
             init(firebaseConfig) {
+                console.log('🎯 FirebaseAuthCore.init() 開始');
+                console.log('🔍 引数 firebaseConfig:', firebaseConfig);
+                console.log('🔍 firebase オブジェクト:', typeof firebase, firebase);
+                
                 try {
+                    console.log('🔍 firebase.apps.length:', firebase.apps.length);
                     if (!firebase.apps.length) {
+                        console.log('🔄 firebase.initializeApp() 実行中...');
                         firebase.initializeApp(firebaseConfig);
+                        console.log('✅ firebase.initializeApp() 完了');
+                    } else {
+                        console.log('✅ Firebase app already initialized');
                     }
                     
+                    console.log('🔄 firebase.auth() 実行中...');
                     this.auth = firebase.auth();
+                    console.log('✅ this.auth 設定完了:', this.auth);
+                    
+                    console.log('🔄 setupAuthStateListener() 実行中...');
                     this.setupAuthStateListener();
+                    console.log('✅ setupAuthStateListener() 完了');
+                    
+                    console.log('🔄 isInitialized を true に設定...');
                     this.isInitialized = true;
+                    console.log('✅ isInitialized:', this.isInitialized);
                     
                     console.log('🔥 Firebase Auth Core initialized successfully');
                 } catch (error) {
                     console.error('❌ Firebase Auth Core initialization failed:', error);
+                    console.error('❌ Error stack:', error.stack);
                     throw error;
                 }
             }
@@ -163,6 +188,56 @@
         // グローバル変数初期化
         window.firebaseAuthCore = null;
         window.firebaseDataCore = null;
+        
+        // コピー機能（必須要件対応）
+        function copyUserInfo() {
+            const user = firebase.auth().currentUser;
+            if (user) {
+                const userInfo = `ユーザー情報:\nEmail: ${user.email}\nUID: ${user.uid}\nDisplayName: ${user.displayName || 'N/A'}\n作成日時: ${new Date(user.metadata.creationTime).toLocaleString()}\n最終ログイン: ${new Date(user.metadata.lastSignInTime).toLocaleString()}`;
+                navigator.clipboard.writeText(userInfo).then(() => {
+                    showCopyNotification('ユーザー情報をコピーしました');
+                });
+            }
+        }
+        
+        function copyConnectionStatus() {
+            const status = document.getElementById('connectionStatus').textContent;
+            const timestamp = new Date().toLocaleString();
+            const connectionInfo = `Firebase接続状態: ${status}\n確認時刻: ${timestamp}\nURL: ${window.location.href}`;
+            navigator.clipboard.writeText(connectionInfo).then(() => {
+                showCopyNotification('接続情報をコピーしました');
+            });
+        }
+        
+        function showCopyNotification(message) {
+            const notification = document.createElement('div');
+            notification.textContent = `✅ ${message}`;
+            notification.style.cssText = `
+                position: fixed;
+                top: 50px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 10px 15px;
+                border-radius: 5px;
+                z-index: 9999;
+                font-size: 12px;
+                animation: fadeInOut 3s ease-in-out;
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+        
+        // コピー通知アニメーション
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInOut {
+                0% { opacity: 0; transform: translateY(-20px); }
+                20%, 80% { opacity: 1; transform: translateY(0); }
+                100% { opacity: 0; transform: translateY(-20px); }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </head>
 <body>
@@ -180,9 +255,11 @@
                 <div id="userInfo" class="user-info" style="display: none;">
                     <img id="userAvatar" class="user-avatar" src="" alt="User">
                     <span id="userName" class="user-name"></span>
+                    <button class="universal-copy-btn" onclick="copyUserInfo()" title="ユーザー情報をコピー" style="background: #28a745; color: white; border: none; padding: 3px 8px; border-radius: 3px; font-size: 10px; margin: 0 5px; cursor: pointer;">📋</button>
                     <button id="logoutButton" class="logout-button" onclick="signOut()">ログアウト</button>
                 </div>
                 <div id="connectionStatus" class="connection-status">🔄 接続中...</div>
+                <button class="universal-copy-btn" onclick="copyConnectionStatus()" title="接続状態をコピー" style="background: #17a2b8; color: white; border: none; padding: 2px 6px; border-radius: 3px; font-size: 9px; margin: 2px 0; cursor: pointer; display: block;">📄 接続情報コピー</button>
             </div>
             
             <button class="settings-toggle" onclick="toggleSettings()">

@@ -77,6 +77,7 @@ function debugFirebaseConnection() {
 function addDebugButton() {
     const debugButton = document.createElement('button');
     debugButton.textContent = '🔍 Firebase Debug';
+    debugButton.className = 'universal-copy-btn'; // 必須要件対応
     debugButton.style.cssText = `
         position: fixed;
         top: 60px;
@@ -92,6 +93,48 @@ function addDebugButton() {
     `;
     debugButton.onclick = debugFirebaseConnection;
     document.body.appendChild(debugButton);
+    
+    // デバッグ情報コピーボタンも追加
+    const copyDebugButton = document.createElement('button');
+    copyDebugButton.textContent = '📋 Debug Copy';
+    copyDebugButton.className = 'universal-copy-btn';
+    copyDebugButton.style.cssText = `
+        position: fixed;
+        top: 60px;
+        right: 150px;
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        z-index: 9999;
+        font-size: 12px;
+    `;
+    copyDebugButton.onclick = copyDebugInfo;
+    document.body.appendChild(copyDebugButton);
+}
+
+// デバッグ情報をコピーする関数
+function copyDebugInfo() {
+    const user = firebase.auth().currentUser;
+    const debugInfo = `Firebase Debug Info:
+===================
+Config: ${JSON.stringify(firebaseConfig, null, 2)}
+Auth Status: ${user ? 'Authenticated' : 'Not authenticated'}
+${user ? \`User: \${user.email} (\${user.uid.substring(0,8)}...)\` : ''}
+Database URL: ${firebaseConfig.databaseURL}
+Timestamp: ${new Date().toLocaleString()}
+Browser: ${navigator.userAgent}
+URL: ${window.location.href}`;
+    
+    navigator.clipboard.writeText(debugInfo).then(() => {
+        if (window.showCopyNotification) {
+            showCopyNotification('デバッグ情報をコピーしました');
+        } else {
+            alert('✅ デバッグ情報をコピーしました');
+        }
+    });
 }
 
 // ページ読み込み後にデバッグボタンを追加

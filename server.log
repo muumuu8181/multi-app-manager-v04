@@ -1,0 +1,7 @@
+
+> multi-app-manager@0.46.0 start
+> node simple-server.js
+
+🚀 Multi-App Manager v0.46 Server
+📡 http://localhost:3003
+🔑 Firebase認証対応サーバー起動完了

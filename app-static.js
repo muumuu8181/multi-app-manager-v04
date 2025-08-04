@@ -539,22 +539,38 @@ async function initializeFirebaseStatic() {
         console.log('✅ Firebase SDK確認完了');
         console.log('✅ Firebase Core クラス確認完了');
         
-        // Firebase Auth Core 初期化
+        // Firebase Auth Core 初期化（超詳細デバッグ版）
         console.log('🔄 FirebaseAuthCore インスタンス作成中...');
+        console.log('🔍 FirebaseAuthCore class type:', typeof FirebaseAuthCore);
+        console.log('🔍 FirebaseAuthCore class:', FirebaseAuthCore);
+        
         try {
+            console.log('🎯 new FirebaseAuthCore() 実行前');
             window.firebaseAuthCore = new FirebaseAuthCore();
             console.log('✅ FirebaseAuthCore インスタンス作成完了');
+            console.log('🔍 Created instance:', window.firebaseAuthCore);
+            console.log('🔍 Instance type:', typeof window.firebaseAuthCore);
+            console.log('🔍 Instance isInitialized:', window.firebaseAuthCore.isInitialized);
         } catch (error) {
             console.error('❌ FirebaseAuthCore インスタンス作成失敗:', error);
+            console.error('❌ エラースタック:', error.stack);
+            console.error('❌ エラー詳細:', JSON.stringify(error, null, 2));
             throw new Error(`FirebaseAuthCore constructor failed: ${error.message}`);
         }
         
         console.log('🔄 FirebaseAuthCore init実行中...');
+        console.log('🔍 firebaseConfig:', firebaseConfig);
+        console.log('🔍 init method type:', typeof window.firebaseAuthCore.init);
+        
         try {
+            console.log('🎯 firebaseAuthCore.init() 実行前');
             await window.firebaseAuthCore.init(firebaseConfig);
             console.log('✅ FirebaseAuthCore 初期化完了');
+            console.log('🔍 After init isInitialized:', window.firebaseAuthCore.isInitialized);
         } catch (error) {
             console.error('❌ FirebaseAuthCore init失敗:', error);
+            console.error('❌ init エラースタック:', error.stack);
+            console.error('❌ init エラー詳細:', JSON.stringify(error, null, 2));
             throw new Error(`FirebaseAuthCore init failed: ${error.message}`);
         }
         
@@ -663,9 +679,9 @@ function updateConnectionStatus(connected) {
     }
 }
 
-// デバッグ付きログイン
+// デバッグ付きログイン（超詳細版）
 function debugAndLogin() {
-    // 詳細デバッグ情報を表示
+    // 基本デバッグ情報
     const debugInfo = {
         'Firebase SDK': typeof firebase !== 'undefined' ? '✅' : '❌',
         'FirebaseAuthCore Class': typeof FirebaseAuthCore !== 'undefined' ? '✅' : '❌',
@@ -673,19 +689,52 @@ function debugAndLogin() {
         'isInitialized': window.firebaseAuthCore?.isInitialized ? '✅' : '❌'
     };
     
+    // 詳細情報（コンソール用）
+    console.log('🔍 === 詳細デバッグ開始 ===');
+    console.log('Firebase Apps Length:', typeof firebase !== 'undefined' ? firebase.apps.length : 'N/A');
+    console.log('FirebaseAuthCore constructor:', FirebaseAuthCore);
+    console.log('window.firebaseAuthCore:', window.firebaseAuthCore);
+    
+    if (window.firebaseAuthCore) {
+        console.log('firebaseAuthCore.auth:', window.firebaseAuthCore.auth);
+        console.log('firebaseAuthCore.user:', window.firebaseAuthCore.user);
+        console.log('firebaseAuthCore.isInitialized:', window.firebaseAuthCore.isInitialized);
+        console.log('firebaseAuthCore init method:', typeof window.firebaseAuthCore.init);
+    }
+    
+    // 表示用メッセージ
     let debugMessage = '🔍 デバッグ情報:\n';
     for (const [key, value] of Object.entries(debugInfo)) {
         debugMessage += `${key}: ${value}\n`;
     }
     
+    // 失敗項目の詳細情報を追加
+    if (!window.firebaseAuthCore) {
+        debugMessage += '\n❌ firebaseAuthCore Instance: 作成されていません';
+        debugMessage += '\n💡 解決策: コンソールでエラーを確認してください';
+    } else if (!window.firebaseAuthCore.isInitialized) {
+        debugMessage += '\n❌ isInitialized: 初期化に失敗';
+        debugMessage += '\n💡 解決策: F12でコンソールのinitエラーを確認';
+    }
+    
     console.log(debugMessage);
+    console.log('🔍 === 詳細デバッグ終了 ===');
     alert(debugMessage);
     
     // Firebase が利用可能な場合のみログイン実行
     if (window.firebaseAuthCore?.isInitialized) {
         signInWithGoogle();
     } else {
-        alert('Firebase初期化が完了していません。しばらく待ってから再試行してください。');
+        // 強制初期化を試行するオプションを提供
+        const retryMessage = 'Firebase初期化が完了していません。\n\n1. F12でコンソールを開いてエラーを確認\n2. 強制初期化を試行しますか？';
+        if (confirm(retryMessage)) {
+            console.log('🔄 強制初期化を開始...');
+            initializeFirebaseStatic().then(() => {
+                alert('✅ 強制初期化完了！再度ログインボタンを押してください。');
+            }).catch((error) => {
+                alert(`❌ 強制初期化失敗: ${error.message}`);
+            });
+        }
     }
 }
 
