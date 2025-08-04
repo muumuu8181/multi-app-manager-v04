@@ -685,13 +685,33 @@ body {
     .sidebar {
         width: 100%;
         height: auto;
-        max-height: 40vh;
+        max-height: 45vh;
         border-right: none;
         border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        position: relative;
     }
 
     .sidebar-header {
-        padding: 15px;
+        padding: 10px;
+    }
+    
+    .auth-container {
+        margin: 8px 0;
+    }
+    
+    .auth-button, .user-info {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+    
+    .connection-status {
+        font-size: 10px;
+        margin-top: 4px;
+    }
+    
+    .settings-panel {
+        max-height: 120px;
+        padding: 10px;
     }
 
     .app-title {
@@ -700,17 +720,27 @@ body {
     }
 
     .tab-list {
-        display: flex;
-        overflow-x: auto;
-        overflow-y: visible;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
         padding: 10px;
-        white-space: nowrap;
+        max-height: 200px;
+        overflow-y: auto;
     }
 
     .tab-button {
-        min-width: 120px;
-        margin: 0 5px;
+        min-width: auto;
+        margin: 0;
         flex-shrink: 0;
+        padding: 10px 8px;
+        font-size: 12px;
+        border-radius: 8px;
+    }
+    
+    .tab-button .icon {
+        display: block;
+        font-size: 16px;
+        margin-bottom: 2px;
     }
 
     .content-area {
